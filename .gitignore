@@ -1,3 +1,5 @@
 raw_data/
 .DS_Store
 .virtual_documents
+.env
+.envrc
