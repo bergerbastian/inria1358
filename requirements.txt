@@ -7,3 +7,6 @@ pandas
 matplotlib
 seaborn
 scikit-learn
+tensorflow
+patchify
+tdqm
