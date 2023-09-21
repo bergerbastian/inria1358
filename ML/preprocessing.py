@@ -20,7 +20,7 @@ def load_and_preprocess_data(image_path, mask_path=None):
     else:
         return image
 
-def create_datasets(save_path, set="train", test_size=.1, batch_size=64):
+def create_datasets(save_path, set="train", test_size=.1, batch_size=64), data_size=:
 
     if set == "predict":
         image_dir = save_path
@@ -31,12 +31,21 @@ def create_datasets(save_path, set="train", test_size=.1, batch_size=64):
     image_path = [os.path.join(image_dir, filename) for filename in os.listdir(image_dir)]
     mask_path = [os.path.join(mask_dir, filename) for filename in os.listdir(mask_dir)] if mask_dir else None
 
+    image_path_test = image_path[int((len(image_path)*(1-test_size))):]
+    mask_path_test = mask_path[int((len(image_path)*(1-test_size))):] if mask_path else None
+
+    image_path_train = image_path[:int((len(image_path)*(1-test_size)))]
+    mask_path_train = mask_path[:int((len(image_path)*(1-test_size)))] if mask_path else None
+
+
     if mask_path:
         dataset = tf.data.Dataset.from_tensor_slices((image_path, mask_path))
     else:
         dataset = tf.data.Dataset.from_tensor_slices(image_path)
 
     dataset = dataset.map(load_and_preprocess_data, num_parallel_calls=tf.data.AUTOTUNE)
+
+    #add caching
 
     #Shuffling full dataset
     buffer_size = len(image_path)
@@ -46,7 +55,7 @@ def create_datasets(save_path, set="train", test_size=.1, batch_size=64):
 
     if test_size == 0:
         dataset = shuffled_dataset
-        dataset_batches = (dataset.batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE))
+        dataset_batches = dataset.batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE)
 
         pics_test = len(dataset)
         print(f"✅ Dataset_batches with {pics_test} images ({len(dataset_batches)} batches) created")
@@ -58,8 +67,8 @@ def create_datasets(save_path, set="train", test_size=.1, batch_size=64):
         train_dataset = shuffled_dataset.take(train_size)
         test_dataset = shuffled_dataset.skip(train_size)
 
-        train_batches = (train_dataset.batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE))
-        test_batches = (test_dataset.batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE))
+        train_batches = train_dataset.batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE)
+        test_batches = test_dataset.batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE)
 
         pics_train = len(train_dataset)
         pics_test = len(test_dataset)

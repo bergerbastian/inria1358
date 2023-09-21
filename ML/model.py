@@ -1,12 +1,11 @@
 # imports
 import tensorflow as tf
 
-def initialize_model_unet(X):
+def initialize_model_unet(input_shape):
     """
     Initialize the UNET Neural Network with random weights and return model
     """
     # $CODE_BEGIN
-    input_shape = X[0].shape
     inputs = tf.keras.layers.Input(input_shape)
 
     c1 = tf.keras.layers.Conv2D(64, (3,3), activation="relu", padding="same")(inputs)
@@ -41,12 +40,11 @@ def initialize_model_unet(X):
 
     return model
 
-def initialize_model_segnet(X):
+def initialize_model_segnet(input_shape):
     """
     Initialize the SEGNET Neural Network with random weights and return model
     """
     # $CODE_BEGIN
-    input_shape = X[0].shape
     def encoder_block(x, filters):
         x = tf.keras.layers.Conv2D(filters, (3, 3), padding='same')(x)
         x = tf.keras.layers.BatchNormalization()(x)
@@ -63,20 +61,20 @@ def initialize_model_segnet(X):
 
     def build_segnet(input_shape):
         inputs = tf.keras.layers.Input(shape=input_shape)
-        
+
         # Encoder
         enc1 = encoder_block(inputs, 64)
         enc2 = encoder_block(enc1, 128)
         enc3 = encoder_block(enc2, 256)
-        
+
         # Decoder
         dec3 = decoder_block(enc3, 256)
         dec2 = decoder_block(dec3, 128)
         dec1 = decoder_block(dec2, 64)
-        
+
         # Pixel-wise classification
         outputs = tf.keras.layers.Conv2D(1, (1, 1), activation='sigmoid')(dec1)
-        
+
         model = tf.keras.Model(inputs=[inputs], outputs=[outputs])
         return model
 
@@ -94,7 +92,7 @@ def compile_model(model: tf.keras.Model, learning_rate=0.0005):
     Compile the Neural Network and return model
     """
     # $CODE_BEGIN
-    optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+    optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=learning_rate)
     model.compile(optimizer, loss=tf.keras.losses.BinaryCrossentropy(), metrics=['accuracy'])
     # $CODE_END
 
@@ -104,11 +102,11 @@ def compile_model(model: tf.keras.Model, learning_rate=0.0005):
 
 def train_model(
     model: tf.keras.Model,
-    X,
-    y,
+    dataset,
     validation_data,
     batch_size=256,
-    patience=2
+    patience=2,
+    epochs=2,
 ):
     """
     Fit the model and return a tuple (fitted_model, history)
@@ -122,24 +120,22 @@ def train_model(
     )
 
     history = model.fit(
-        X,
-        y,
+        dataset,
         validation_data=validation_data,
-        epochs=100,
+        epochs=epochs,
         batch_size=batch_size,
         callbacks=[es],
-        verbose=0
     )
     # $CODE_END
 
-    print(f"✅ Model trained on {len(X)} patches.")
+    print(f"✅ Model trained on {len(dataset)} batches over {epochs} epochs.")
 
     return model, history
 
 def make_model(
-    X,
-    y,
+    dataset,
     validation_data,
+    input_shape,
     model_name='segnet',
     learning_rate=0.0005,
     batch_size=32,
@@ -148,22 +144,21 @@ def make_model(
 ):
     '''
     Initialize, compile, and train model specified by model_name "segnet", "unet". Return model, history
-    '''    
+    '''
     # $CODE_BEGIN
     if model_name == 'segnet':
-        model = initialize_model_segnet(X)
+        model = initialize_model_segnet(input_shape)
     elif model_name == 'unet':
-        model = initialize_model_unet(X)
+        model = initialize_model_unet(input_shape)
     else:
         print(f'No {model_name} model defined')
         return 1
-    
+
     model = compile_model(model=model, learning_rate=learning_rate)
 
     model, history = train_model(
         model=model,
-        X=X,
-        y=y,
+        dataset=dataset,
         validation_data=validation_data,
         batch_size=batch_size,
         epochs=epochs,
@@ -171,4 +166,4 @@ def make_model(
     )
     # $CODE_END
 
-    return model, history   
+    return model, history
