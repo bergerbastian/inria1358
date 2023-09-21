@@ -6,11 +6,18 @@ import matplotlib.pyplot as plt
 import os
 from tqdm import tqdm
 import tensorflow as tf
-import colorama
+from colorama import Fore, Style
 
 def make_patches(source_path, save_path, image_size=(200,200), image_type="png"):
     isExist = os.path.exists(save_path)
+
+    sets = []
+
+    # Check if save path exists
     if isExist:
+
+        print(Fore.BLUE + "\nChecking local data..." + Style.RESET_ALL)
+        # Get # of images from save path
         train_images = len(os.listdir(f"{save_path}/train/images"))
         train_gt = len(os.listdir(f"{save_path}/train/gt"))
         test_images = len(os.listdir(f"{save_path}/test/images"))
@@ -18,11 +25,15 @@ def make_patches(source_path, save_path, image_size=(200,200), image_type="png")
         print(f"{train_images} Patches found for X_train")
         print(f"{train_gt} Patches found for y_train")
         print(f"{test_images} Patches found for X_test")
+
+
         print("✅ Patches already exist")
-
         return
+    else:
+        # No folder exist yet, so we need to make sets for both train & test
 
-    sets = ["train", "test"]
+        sets = ["train", "test"]
+
     for set in sets:
         subfolders = ['images']
         if set == 'train':
