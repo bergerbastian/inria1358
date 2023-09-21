@@ -1,5 +1,6 @@
 import os
 import tensorflow as tf
+from sklearn.model_selection import train_test_split
 
 def load_and_preprocess_data(image_path, mask_path=None):
     # Load and preprocess the image
@@ -20,7 +21,7 @@ def load_and_preprocess_data(image_path, mask_path=None):
     else:
         return image
 
-def create_datasets(save_path, set="train", test_size=.1, batch_size=64), data_size=:
+def create_datasets(save_path, set="train", test_size=.1, batch_size=64):
 
     if set == "predict":
         image_dir = save_path
@@ -30,13 +31,6 @@ def create_datasets(save_path, set="train", test_size=.1, batch_size=64), data_s
 
     image_path = [os.path.join(image_dir, filename) for filename in os.listdir(image_dir)]
     mask_path = [os.path.join(mask_dir, filename) for filename in os.listdir(mask_dir)] if mask_dir else None
-
-    image_path_test = image_path[int((len(image_path)*(1-test_size))):]
-    mask_path_test = mask_path[int((len(image_path)*(1-test_size))):] if mask_path else None
-
-    image_path_train = image_path[:int((len(image_path)*(1-test_size)))]
-    mask_path_train = mask_path[:int((len(image_path)*(1-test_size)))] if mask_path else None
-
 
     if mask_path:
         dataset = tf.data.Dataset.from_tensor_slices((image_path, mask_path))
