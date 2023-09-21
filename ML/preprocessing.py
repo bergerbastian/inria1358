@@ -1,5 +1,6 @@
 import os
 import tensorflow as tf
+from colorama import Fore, Style
 
 def load_and_preprocess_data(image_path, mask_path=None):
     # Load and preprocess the image
@@ -21,6 +22,8 @@ def load_and_preprocess_data(image_path, mask_path=None):
         return image
 
 def create_datasets(save_path, set="train", test_size=.1, batch_size=64):
+
+    print(Fore.BLUE + "\nCreating dataset for {set}" + Style.RESET_ALL)
 
     if set == "predict":
         image_dir = save_path
