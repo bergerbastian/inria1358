@@ -22,7 +22,10 @@ def load_and_preprocess_data(image_path, mask_path=None):
 
 def create_datasets(save_path, set="train", test_size=.1, batch_size=64):
 
-    image_dir = f'{save_path}/{set}/images'
+    if set == "predict":
+        image_dir = save_path
+    else:
+        image_dir = f'{save_path}/{set}/images'
     mask_dir = f'{save_path}/{set}/gt' if set == "train" else None
 
     image_path = [os.path.join(image_dir, filename) for filename in os.listdir(image_dir)]
@@ -37,22 +40,31 @@ def create_datasets(save_path, set="train", test_size=.1, batch_size=64):
 
     #Shuffling full dataset
     buffer_size = len(image_path)
-    shuffled_dataset = dataset.shuffle(buffer_size)
+    shuffled_dataset = dataset.shuffle(buffer_size) if set == "train" else dataset
 
     #Splitting dataset into train and test
 
     if test_size == 0:
-        train_dataset = shuffled_dataset
-        train_batches = (train_dataset.batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE))
+        dataset = shuffled_dataset
+        dataset_batches = (dataset.batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE))
 
-        return train_batches
+        pics_test = len(dataset)
+        print(f"✅ Dataset_batches with {pics_test} images ({len(dataset_batches)} batches) created")
+
+        return dataset_batches
 
     else:
-        train_size = int(test_size * buffer_size)
+        train_size = int((1-test_size) * buffer_size)
         train_dataset = shuffled_dataset.take(train_size)
         test_dataset = shuffled_dataset.skip(train_size)
 
         train_batches = (train_dataset.batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE))
         test_batches = (test_dataset.batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE))
+
+        pics_train = len(train_dataset)
+        pics_test = len(test_dataset)
+
+        print(f"✅ Train_batches with {pics_train} images ({len(train_batches)} batches) created")
+        print(f"✅ Test_batches with {pics_test} images ({len(test_batches)} batches) created")
 
         return train_batches, test_batches
