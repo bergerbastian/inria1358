@@ -1,6 +1,9 @@
 import os
 import tensorflow as tf
 from colorama import Fore, Style
+import pandas as pd
+from sklearn.model_selection import train_test_split
+
 
 def load_and_preprocess_data(image_path, mask_path=None):
     # Load and preprocess the image
@@ -21,7 +24,7 @@ def load_and_preprocess_data(image_path, mask_path=None):
     else:
         return image
 
-def create_datasets(save_path, set="train", test_size=.1, batch_size=64):
+def create_datasets(save_path, set="train", test_size=.1, batch_size=64, data_size=1):
 
     print(Fore.BLUE + "\nCreating dataset for {set}" + Style.RESET_ALL)
 
@@ -34,10 +37,12 @@ def create_datasets(save_path, set="train", test_size=.1, batch_size=64):
     image_path = [os.path.join(image_dir, filename) for filename in os.listdir(image_dir)]
     mask_path = [os.path.join(mask_dir, filename) for filename in os.listdir(mask_dir)] if mask_dir else None
 
+    image_path_subset, _, mask_path_subset, _ = train_test_split(image_path, mask_path, test_size=data_size)
+
     if mask_path:
-        dataset = tf.data.Dataset.from_tensor_slices((image_path, mask_path))
+        dataset = tf.data.Dataset.from_tensor_slices((image_path_subset, mask_path_subset))
     else:
-        dataset = tf.data.Dataset.from_tensor_slices(image_path)
+        dataset = tf.data.Dataset.from_tensor_slices(image_path_subset)
 
     dataset = dataset.map(load_and_preprocess_data, num_parallel_calls=tf.data.AUTOTUNE)
 
