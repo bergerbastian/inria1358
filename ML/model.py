@@ -208,6 +208,6 @@ def make_model(
     )
     # $CODE_END
 
+    model.save_weights(f'./mlops/training_output/models/{model_name}')
 
-
-    return model, history, model_name
+    return model, history
