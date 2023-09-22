@@ -74,20 +74,18 @@ def create_datasets(save_path, set="train", test_size=.1, batch_size=64, data_si
 
         train_dataset = tf.data.Dataset.from_tensor_slices((image_path_train, mask_path_train))
         train_dataset = train_dataset.map(load_and_preprocess_data, num_parallel_calls=tf.data.AUTOTUNE)
-        # train_dataset = train_dataset.cache(CACHE_PATH)
-        train_dataset = train_dataset.shuffle(len(image_path_train))
+        train_dataset = train_dataset.cache("/Users/bastianberger/code/bergerbastian/inria1358/Cache/train")
+        train_dataset = train_dataset.shuffle(len(image_path_train)*.2)
         train_batches = train_dataset.batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE)
 
         val_dataset = tf.data.Dataset.from_tensor_slices((image_path_val, mask_path_val))
         val_dataset = val_dataset.map(load_and_preprocess_data, num_parallel_calls=tf.data.AUTOTUNE)
-        # val_dataset = val_dataset.cache(CACHE_PATH)
-        val_dataset = val_dataset.shuffle(len(image_path_val))
+        val_dataset = val_dataset.cache("/Users/bastianberger/code/bergerbastian/inria1358/Cache/val")
+        val_dataset = val_dataset.shuffle(len(image_path_val)*.2)
         val_batches = val_dataset.batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE)
 
         test_dataset = tf.data.Dataset.from_tensor_slices((image_path_test, mask_path_test)) if test_size != 0 else None
         test_dataset = test_dataset.map(load_and_preprocess_data, num_parallel_calls=tf.data.AUTOTUNE) if test_size != 0 else None
-        # test_dataset = test_dataset.cache(CACHE_PATH)
-        test_dataset = test_dataset.shuffle(len(image_path_test))
         test_batches = test_dataset.batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE) if test_size != 0 else None
 
         pics_train = len(train_dataset)

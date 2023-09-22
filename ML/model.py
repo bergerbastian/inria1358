@@ -93,7 +93,7 @@ def compile_model(model: tf.keras.Model, learning_rate=0.0005):
     """
     # $CODE_BEGIN
     optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=learning_rate)
-    model.compile(optimizer, loss=tf.keras.losses.BinaryCrossentropy(), metrics=['accuracy'])
+    model.compile(optimizer, loss=tf.keras.losses.BinaryCrossentropy(), metrics=['accuracy', tf.keras.metrics.MeanIoU(2)])
     # $CODE_END
 
     print("✅ Model compiled")
