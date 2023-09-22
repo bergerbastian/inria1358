@@ -86,6 +86,48 @@ def initialize_model_segnet(input_shape):
 
     return segnet_model
 
+def initialize_model_TernausNet(input_shape):
+    # Load pre-trained VGG16 model + higher level layers
+    vgg16 = tf.keras.applications.VGG16(weights='imagenet', include_top=False, input_shape=input_shape)
+
+    # Encoder - output of the last layer of VGG16 model
+    encoder = vgg16.output
+
+    # Decoder
+    x = tf.keras.layers.Conv2D(512, (3, 3), activation='relu', padding='same')(encoder)
+
+    x = tf.keras.layers.UpSampling2D((2, 2))(x)
+    x = tf.keras.layers.concatenate([x, vgg16.get_layer('block5_conv3').output], axis=-1)
+    x = tf.keras.layers.Conv2D(256, (3, 3), activation='relu', padding='same')(x)
+
+    x = tf.keras.layers.UpSampling2D((2, 2))(x)
+    x = tf.keras.layers.ZeroPadding2D(((1, 0), (1, 0)))(x)
+    x = tf.keras.layers.concatenate([x, vgg16.get_layer('block4_conv3').output], axis=-1)
+    x = tf.keras.layers.Conv2D(128, (3, 3), activation='relu', padding='same')(x)
+
+    x = tf.keras.layers.UpSampling2D((2, 2))(x)
+    x = tf.keras.layers.concatenate([x, vgg16.get_layer('block3_conv3').output], axis=-1)
+    x = tf.keras.layers.Conv2D(64, (3, 3), activation='relu', padding='same')(x)
+
+    x = tf.keras.layers.UpSampling2D((2, 2))(x)
+    x = tf.keras.layers.concatenate([x, vgg16.get_layer('block2_conv2').output], axis=-1)
+    x = tf.keras.layers.Conv2D(32, (3, 3), activation='relu', padding='same')(x)
+
+    x = tf.keras.layers.UpSampling2D((2, 2))(x)
+    x = tf.keras.layers.concatenate([x, vgg16.get_layer('block1_conv2').output], axis=-1)
+    x = tf.keras.layers.Conv2D(16, (3, 3), activation='relu', padding='same')(x)
+
+    # Prediction Layer
+    outputs = tf.keras.layers.Conv2D(1, (1, 1), activation='sigmoid')(x)
+
+    model = tf.keras.models.Model(inputs=vgg16.input, outputs=outputs)
+
+    print("✅ TernausNet initialized")
+
+    return model
+
+
+
 
 def compile_model(model: tf.keras.Model, learning_rate=0.0005):
     """
@@ -150,6 +192,8 @@ def make_model(
         model = initialize_model_segnet(input_shape)
     elif model_name == 'unet':
         model = initialize_model_unet(input_shape)
+    elif model_name == 'ternausnet':
+        model = initialize_model_TernausNet(input_shape)
     else:
         print(f'No {model_name} model defined')
         return 1
