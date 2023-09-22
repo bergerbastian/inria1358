@@ -127,8 +127,6 @@ def initialize_model_TernausNet(input_shape):
     return model
 
 
-
-
 def compile_model(model: tf.keras.Model, learning_rate=0.0005):
     """
     Compile the Neural Network and return model
@@ -210,4 +208,6 @@ def make_model(
     )
     # $CODE_END
 
-    return model, history
+
+
+    return model, history, model_name
