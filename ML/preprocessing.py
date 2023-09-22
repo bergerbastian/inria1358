@@ -70,19 +70,19 @@ def create_datasets(save_path, set="train", test_size=.1, batch_size=64, data_si
         if data_size == 1:
             image_path_subset = image_path_rest
             mask_path_subset = mask_path_rest
-        image_path_train, image_path_val, mask_path_train, mask_path_val = train_test_split(image_path_subset, mask_path_subset, train_size=val_size)
+        image_path_train, image_path_val, mask_path_train, mask_path_val = train_test_split(image_path_subset, mask_path_subset, test_size=val_size)
 
         train_dataset = tf.data.Dataset.from_tensor_slices((image_path_train, mask_path_train))
         train_dataset = train_dataset.map(load_and_preprocess_data, num_parallel_calls=tf.data.AUTOTUNE)
-        train_dataset = train_dataset.cache("/Users/bastianberger/code/bergerbastian/inria1358/Cache/train")
-        train_dataset = train_dataset.shuffle(len(image_path_train)*.2)
-        train_batches = train_dataset.batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE)
+        train_dataset = train_dataset.cache(f"/home/jupyter/bastianberger/inria1358/ML/cache/{set}")
+        train_dataset = train_dataset.shuffle(1000)
+        train_batches = train_dataset.batch(batch_size).prefetch(tf.data.AUTOTUNE)
 
         val_dataset = tf.data.Dataset.from_tensor_slices((image_path_val, mask_path_val))
         val_dataset = val_dataset.map(load_and_preprocess_data, num_parallel_calls=tf.data.AUTOTUNE)
-        val_dataset = val_dataset.cache("/Users/bastianberger/code/bergerbastian/inria1358/Cache/val")
-        val_dataset = val_dataset.shuffle(len(image_path_val)*.2)
-        val_batches = val_dataset.batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE)
+        val_dataset = val_dataset.cache(f"/home/jupyter/bastianberger/inria1358/ML/cache/{set}")
+        val_dataset = val_dataset.shuffle(1000)
+        val_batches = val_dataset.batch(batch_size).prefetch(tf.data.AUTOTUNE)
 
         test_dataset = tf.data.Dataset.from_tensor_slices((image_path_test, mask_path_test)) if test_size != 0 else None
         test_dataset = test_dataset.map(load_and_preprocess_data, num_parallel_calls=tf.data.AUTOTUNE) if test_size != 0 else None

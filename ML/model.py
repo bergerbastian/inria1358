@@ -1,5 +1,6 @@
 # imports
 import tensorflow as tf
+import datetime
 
 def initialize_model_unet(input_shape):
     """
@@ -104,7 +105,6 @@ def train_model(
     model: tf.keras.Model,
     dataset,
     validation_data,
-    batch_size=256,
     patience=2,
     epochs=2,
 ):
@@ -118,13 +118,15 @@ def train_model(
         restore_best_weights=True,
         verbose=1
     )
-
+    log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+    
+    
     history = model.fit(
         dataset,
         validation_data=validation_data,
         epochs=epochs,
-        batch_size=batch_size,
-        callbacks=[es],
+        callbacks=[es, tensorboard_callback],
     )
     # $CODE_END
 
@@ -138,7 +140,6 @@ def make_model(
     input_shape,
     model_name='segnet',
     learning_rate=0.0005,
-    batch_size=32,
     epochs=2,
     patience=2,
 ):
@@ -160,7 +161,6 @@ def make_model(
         model=model,
         dataset=dataset,
         validation_data=validation_data,
-        batch_size=batch_size,
         epochs=epochs,
         patience=patience
     )
