@@ -127,13 +127,13 @@ def initialize_model_TernausNet(input_shape):
     return model
 
 
-def compile_model(model: tf.keras.Model, learning_rate=0.0005):
+def compile_model(model: tf.keras.Model, learning_rate=0.0005, loss=tf.keras.losses.BinaryCrossentropy()):
     """
     Compile the Neural Network and return model
     """
     # $CODE_BEGIN
     optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=learning_rate)
-    model.compile(optimizer, loss=tf.keras.losses.BinaryCrossentropy(), metrics=['accuracy', tf.keras.metrics.MeanIoU(2)])
+    model.compile(optimizer, loss=loss, metrics=['accuracy', tf.keras.metrics.MeanIoU(2)])
     # $CODE_END
 
     print("✅ Model compiled")
@@ -181,6 +181,7 @@ def make_model(
     batch_size=32,
     epochs=2,
     patience=2,
+    loss=tf.keras.losses.BinaryCrossentropy()
 ):
     '''
     Initialize, compile, and train model specified by model_name "segnet", "unet". Return model, history
@@ -196,7 +197,7 @@ def make_model(
         print(f'No {model_name} model defined')
         return 1
 
-    model = compile_model(model=model, learning_rate=learning_rate)
+    model = compile_model(model=model, learning_rate=learning_rate, loss=loss)
 
     model, history = train_model(
         model=model,
