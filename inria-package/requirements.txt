@@ -1,0 +1,14 @@
+pytest
+pylint
+ipdb
+jupyterlab
+numpy
+pandas
+matplotlib
+seaborn
+scikit-learn
+patchify
+tqdm
+colorama
+tensorflow
+mlflow
