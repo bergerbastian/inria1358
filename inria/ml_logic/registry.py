@@ -8,7 +8,7 @@ from tensorflow import keras
 
 import mlflow
 
-from params import *
+from inria.params import *
 
 def save_results(params: dict, metrics: dict) -> None:
     """

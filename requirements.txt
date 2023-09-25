@@ -17,3 +17,5 @@ tensorflow; sys_platform == ‘darwin’ and ‘ARM’ not in platform_version #
 tensorflow; sys_platform != ‘darwin’ # Windows & Ubuntu Intel chips
 
 mlflow
+fastapi
+uvicorn
