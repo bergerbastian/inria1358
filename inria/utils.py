@@ -9,9 +9,9 @@ import time
 from inria.params import MAPS_API_KEY, LOCAL_API_DATA_FOLDER
 
 def predict_image_maps(lat, lon, model):
-    """Returns prediction matrix for a google maps image from the specified lat,lon
+    """Returns original image and prediction matrix for a google maps image from the specified lat,lon
     """
-    image_url=f"https://maps.googleapis.com/maps/api/staticmap?center={lat},{lon}&zoom=18&size=640x640&scale=2&maptype=satellite&key={MAPS_API_KEY}"
+    image_url=f"https://maps.googleapis.com/maps/api/staticmap?center={lat},{lon}&zoom=17&size=640x640&scale=2&maptype=satellite&key={MAPS_API_KEY}"
     dimensions = (200,200, 3)
 
     image_path = LOCAL_API_DATA_FOLDER
@@ -51,7 +51,7 @@ def predict_image_maps(lat, lon, model):
     rows = [np.hstack(predict_data[r]) for r in range(patches.shape[1])]
     prediction = np.vstack(rows)
 
-    return prediction
+    return imarray, prediction
 
 def save_image_prediction(prediction, path, custom_suffix=""):
     """saves image at the specified path"""
