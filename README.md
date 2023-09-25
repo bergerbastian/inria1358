@@ -5,7 +5,7 @@ build package
 pip install -e .
 ```
 
-run api
+run api (requires google maps api key)
 ```
 uvicorn inria.api.fast:app
 ```
