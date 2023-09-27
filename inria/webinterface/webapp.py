@@ -20,8 +20,14 @@ st.set_page_config(layout="wide")
 street = st.sidebar.text_input("Address", "Schützenstraße 40, Berlin")
 zoom_level = st.sidebar.number_input("Zoom", min_value=2, max_value=20, value=17, format="%i")
 threshold = st.sidebar.number_input("Threshold", min_value=0.0, max_value=1.0, value=0.5)
-model = st.sidebar.selectbox('What model do you want to use?', ('unet', 'segnet'))
+model = st.sidebar.selectbox('What model do you want to use?', ('unet', 'segnet', "DeepLabV3"))
 show_iou = st.sidebar.checkbox('Show IOU graph')
+
+dimensions = {
+    "unet": 200,
+    "segnet": 200,
+    "DeepLabV3": 512
+}
 
 # PREDICT FUNCTION
 def prediction():
@@ -46,7 +52,7 @@ def prediction():
     with st.spinner('Wait for it...'):
 
         # API CALL AND DATA
-        url = f'http://localhost:8000/predict-maps?lat={lat}&lon={lon}&zoom={zoom_level}&model={model}'
+        url = f'http://localhost:8000/predict-maps?lat={lat}&lon={lon}&zoom={zoom_level}&model={model}&dimensions={dimensions[model]}'
         r = requests.get(url=url)
         dict = json.loads(r.json())
 

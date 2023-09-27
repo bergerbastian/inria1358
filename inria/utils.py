@@ -67,7 +67,7 @@ def predict_image_maps(lat, lon, model, zoom=17, return_ground_truth=True, dimen
     prediction = np.vstack(rows)
 
     if return_ground_truth and int(zoom) >= 17:
-        return imarray, get_ground_truth(lat,lon, zoom), prediction
+        return imarray, get_ground_truth(lat,lon, zoom, dimensions=dimensions), prediction
     else:
         return imarray, prediction
 

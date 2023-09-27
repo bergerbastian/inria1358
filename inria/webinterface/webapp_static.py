@@ -25,6 +25,7 @@ show_iou = st.sidebar.checkbox('Show IOU graph')
 
 storage_client = storage.Client(project="le-wagon-bootcamp-398616")
 buckets = storage_client.list_buckets()
+
 print("Buckets:")
 for bucket in buckets:
     print(bucket.name)
