@@ -8,25 +8,40 @@ import urllib
 import time
 from inria.params import MAPS_API_KEY, LOCAL_API_DATA_FOLDER
 
-def predict_image_maps(lat, lon, model):
-    """Returns original image and prediction matrix for a google maps image from the specified lat,lon
+def predict_image_maps(lat, lon, model, zoom=17, return_ground_truth=True, dimensions = (200,200, 3)):
+    """Returns original image and prediction matrix for a google maps image from the specified lat,lon. If zoom >= 17 and return_ground_truth = True, it also returns a GT generated from google maps api.
     """
-    image_url=f"https://maps.googleapis.com/maps/api/staticmap?center={lat},{lon}&zoom=17&size=640x640&scale=2&maptype=satellite&key={MAPS_API_KEY}"
-    dimensions = (200,200, 3)
+    image_url=f"https://maps.googleapis.com/maps/api/staticmap?center={lat},{lon}&zoom={zoom}&size=640x640&scale=2&maptype=satellite&key={MAPS_API_KEY}"
 
     image_path = LOCAL_API_DATA_FOLDER
     image_filename = f"{str(lat).replace('.','_')}__{str(lon).replace('.','_')}"
     image_type = "png"
 
-    urllib.request.urlretrieve(image_url, f"{image_path}/{image_filename}.{image_type}")
+    urllib.request.urlretrieve(image_url, f"{image_path}/input/{image_filename}.{image_type}")
+
+    # Calculate max patches
+    width = dimensions[0]
+    height = dimensions[1]
+
+    w_max_patches = int(1280 / width)
+    h_max_patches = int(1280 / height)
+
+    # Calculate max size
+    w_max = width * w_max_patches
+    h_max = height * h_max_patches
+
+    # Required crop
+    w_crop = 1280 - w_max
+    h_crop = 1280 - h_max
+
+    # Set crop boundaries
+    left = w_crop / 2
+    top = h_crop / 2
+    right = 1280-w_crop/2
+    bottom = 1280-h_crop/2
+
     # Open the downloaded image in PIL
-
-    left = 40
-    top = 40
-    right = 1280-40
-    bottom = 1280-40
-
-    my_img = Image.open(f"{image_path}/{image_filename}.{image_type}").crop((left, top, right, bottom)).convert("RGB")
+    my_img = Image.open(f"{image_path}/input/{image_filename}.{image_type}").crop((left, top, right, bottom)).convert("RGB")
 
     patch_list = []
     #im = Image.open(f'{image_path}')
@@ -51,16 +66,99 @@ def predict_image_maps(lat, lon, model):
     rows = [np.hstack(predict_data[r]) for r in range(patches.shape[1])]
     prediction = np.vstack(rows)
 
-    return imarray, prediction
+    if return_ground_truth and int(zoom) >= 17:
+        return imarray, get_ground_truth(lat,lon, zoom), prediction
+    else:
+        return imarray, prediction
 
 def save_image_prediction(prediction, path, custom_suffix=""):
     """saves image at the specified path"""
     timestamp = time.strftime("%Y%m%d-%H%M%S")
-    Image.fromarray(np.uint8(prediction*255)).save(f"{path}/pred_{timestamp}_{custom_suffix}.png")
-    return f"{path}/pred_{timestamp}_{custom_suffix}.png"
+    Image.fromarray(np.uint8(prediction*255)).save(f"{path}/{timestamp}_{custom_suffix}.png")
+    return f"{path}/{timestamp}_{custom_suffix}.png"
+
+
+def get_ground_truth(lat, lon, zoom=17, dimensions = (200,200, 3)):
+    gt_url = f"https://maps.googleapis.com/maps/api/staticmap?center={lat},{lon}&zoom={zoom}&size=640x640&scale=2&map_id=c2e4254a97b86e42&style=feature:all|element:labels|visibility:off&key={MAPS_API_KEY}"
+
+    image_path = LOCAL_API_DATA_FOLDER
+    image_filename = f"{str(lat).replace('.','_')}__{str(lon).replace('.','_')}"
+    image_type = "png"
+    urllib.request.urlretrieve(gt_url, f"{image_path}/{image_filename}.{image_type}")
+
+    # Calculate max patches
+    width = dimensions[0]
+    height = dimensions[1]
+
+    w_max_patches = int(1280 / width)
+    h_max_patches = int(1280 / height)
+
+    # Calculate max size
+    w_max = width * w_max_patches
+    h_max = height * h_max_patches
+
+    # Required crop
+    w_crop = 1280 - w_max
+    h_crop = 1280 - h_max
+
+    # Set crop boundaries
+    left = w_crop / 2
+    top = h_crop / 2
+    right = 1280-w_crop/2
+    bottom = 1280-h_crop/2
+
+    my_img = Image.open(f"{image_path}/{image_filename}.{image_type}").crop((left, top, right, bottom)).convert("RGB")
+
+    # Load or create your image as a NumPy array
+    image = np.array(my_img)  # Replace 'your_image' with your actual image array
+
+    # Define the desired color and a tolerance
+    desired_color = (191, 48, 191)  # Red in RGB
+    tolerance = 80  # Adjust this tolerance as needed
+
+    # Create a mask for the desired color
+    lower_bound = np.array(desired_color) - tolerance
+    upper_bound = np.array(desired_color) + tolerance
+    mask = np.all((image >= lower_bound) & (image <= upper_bound), axis=2)
+
+    # Color the masked pixels white
+    result = np.zeros_like(image)
+    result[mask] = (255,255,255)
+
+    return result
+
+def compute_iou(mask1, mask2):
+    """
+    Compute the Intersection over Union (IoU) of two binary segmentation masks.
+
+    Args:
+        mask1 (numpy.ndarray): First binary mask.
+        mask2 (numpy.ndarray): Second binary mask.
+
+    Returns:
+        float: IoU score.
+    """
+    # Ensure the masks are binary
+    mask1 = (mask1 > 0).astype(np.uint8)
+    mask2 = (mask2 > 0).astype(np.uint8)
+
+    # Intersection and Union
+    intersection = np.logical_and(mask1, mask2).sum()
+    union = np.logical_or(mask1, mask2).sum()
+
+    # Avoid division by zero
+    if union == 0:
+        return 0.0
+
+    return intersection / union
+
+
+
 #
 #   !!WARNING: These functions do not yet work as expected!!
 #
+
+
 
 def predict_full_image_from_patches(save_path, model, image_name):
     """
