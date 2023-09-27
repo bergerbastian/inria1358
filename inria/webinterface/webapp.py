@@ -11,6 +11,8 @@ import tensorflow as tf
 
 from inria.utils import compute_iou
 
+import matplotlib.pyplot as plt
+
 st.set_page_config(layout="wide")
 
 
@@ -18,6 +20,9 @@ st.set_page_config(layout="wide")
 street = st.sidebar.text_input("Address", "Schützenstraße 40, Berlin")
 zoom_level = st.sidebar.number_input("Zoom", min_value=2, max_value=20, value=17, format="%i")
 threshold = st.sidebar.number_input("Threshold", min_value=0.0, max_value=1.0, value=0.5)
+model = st.sidebar.selectbox('What model do you want to use?', ('unet', 'segnet'))
+show_iou = st.sidebar.checkbox('Show IOU graph')
+
 def prediction():
     st.header(f"Prediction for {street}")
     geolocator = Nominatim(user_agent="GTA Lookup")
@@ -34,10 +39,11 @@ def prediction():
 
 
     with st.spinner('Wait for it...'):
-        url = f'http://localhost:8000/predict-maps?lat={lat}&lon={lon}&zoom={zoom_level}'
+        url = f'http://localhost:8000/predict-maps?lat={lat}&lon={lon}&zoom={zoom_level}&model={model}'
         r = requests.get(url=url)
         dict = json.loads(r.json())
 
+        st.write(f"Model: {dict['model']}")
 
         predicted_mask = np.asarray(dict['predicted_mask']).astype(np.uint8)
         columns[2].write("Segmentation Mask")
@@ -56,11 +62,32 @@ def prediction():
             columns[1].write("Ground Truth")
             columns[1].image(gt_mask)
 
-            columns[1].metric(label="IOU", value=f"{compute_iou(predicted_mask/255>threshold, np.array(tf.squeeze(tf.image.rgb_to_grayscale(gt_mask))))}")
+            delta = None
+            current_iou = compute_iou(predicted_mask/255>threshold, np.array(tf.squeeze(tf.image.rgb_to_grayscale(gt_mask))))
+
+
+            if 'prev_iou' in st.session_state:
+                delta = f"{np.round((current_iou/st.session_state['prev_iou']-1)*100)}%"
+                st.session_state['prev_iou'] = current_iou
+            else:
+                st.session_state['prev_iou'] = current_iou
+
+            columns[1].metric(label="IOU", value=f"{current_iou}", delta=delta)
 
         else:
             columns[1].write("Input Image")
             columns[1].image(np.asarray(dict['original_image']).astype(np.uint8))
+
+        if show_iou:
+            fig, ax = plt.subplots()
+
+            linspace = np.linspace(0.05, 0.95, num=50)
+            y = [compute_iou(predicted_mask/255>ts, np.array(tf.squeeze(tf.image.rgb_to_grayscale(gt_mask)))) for ts in linspace]
+            ax.plot(linspace, y)
+            ax.set_ylabel("IOU")
+            ax.set_xlabel("Threshold")
+
+            st.pyplot(fig)
 
     st.header("Location")
     st.map(map_data)
