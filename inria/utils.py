@@ -8,24 +8,39 @@ import urllib
 import time
 from inria.params import MAPS_API_KEY, LOCAL_API_DATA_FOLDER
 
-def predict_image_maps(lat, lon, model, zoom=17, return_ground_truth=True):
+def predict_image_maps(lat, lon, model, zoom=17, return_ground_truth=True, dimensions = (200,200, 3)):
     """Returns original image and prediction matrix for a google maps image from the specified lat,lon. If zoom >= 17 and return_ground_truth = True, it also returns a GT generated from google maps api.
     """
     image_url=f"https://maps.googleapis.com/maps/api/staticmap?center={lat},{lon}&zoom={zoom}&size=640x640&scale=2&maptype=satellite&key={MAPS_API_KEY}"
-    dimensions = (200,200, 3)
 
     image_path = LOCAL_API_DATA_FOLDER
     image_filename = f"{str(lat).replace('.','_')}__{str(lon).replace('.','_')}"
     image_type = "png"
 
     urllib.request.urlretrieve(image_url, f"{image_path}/input/{image_filename}.{image_type}")
+
+    # Calculate max patches
+    width = dimensions[0]
+    height = dimensions[1]
+
+    w_max_patches = int(1280 / width)
+    h_max_patches = int(1280 / height)
+
+    # Calculate max size
+    w_max = width * w_max_patches
+    h_max = height * h_max_patches
+
+    # Required crop
+    w_crop = 1280 - w_max
+    h_crop = 1280 - h_max
+
+    # Set crop boundaries
+    left = w_crop / 2
+    top = h_crop / 2
+    right = 1280-w_crop/2
+    bottom = 1280-h_crop/2
+
     # Open the downloaded image in PIL
-
-    left = 40
-    top = 40
-    right = 1280-40
-    bottom = 1280-40
-
     my_img = Image.open(f"{image_path}/input/{image_filename}.{image_type}").crop((left, top, right, bottom)).convert("RGB")
 
     patch_list = []
@@ -63,19 +78,34 @@ def save_image_prediction(prediction, path, custom_suffix=""):
     return f"{path}/{timestamp}_{custom_suffix}.png"
 
 
-def get_ground_truth(lat, lon, zoom=17):
+def get_ground_truth(lat, lon, zoom=17, dimensions = (200,200, 3)):
     gt_url = f"https://maps.googleapis.com/maps/api/staticmap?center={lat},{lon}&zoom={zoom}&size=640x640&scale=2&map_id=c2e4254a97b86e42&style=feature:all|element:labels|visibility:off&key={MAPS_API_KEY}"
 
     image_path = LOCAL_API_DATA_FOLDER
     image_filename = f"{str(lat).replace('.','_')}__{str(lon).replace('.','_')}"
     image_type = "png"
     urllib.request.urlretrieve(gt_url, f"{image_path}/{image_filename}.{image_type}")
-    # Open the downloaded image in PIL
 
-    left = 40
-    top = 40
-    right = 1280-40
-    bottom = 1280-40
+    # Calculate max patches
+    width = dimensions[0]
+    height = dimensions[1]
+
+    w_max_patches = int(1280 / width)
+    h_max_patches = int(1280 / height)
+
+    # Calculate max size
+    w_max = width * w_max_patches
+    h_max = height * h_max_patches
+
+    # Required crop
+    w_crop = 1280 - w_max
+    h_crop = 1280 - h_max
+
+    # Set crop boundaries
+    left = w_crop / 2
+    top = h_crop / 2
+    right = 1280-w_crop/2
+    bottom = 1280-h_crop/2
 
     my_img = Image.open(f"{image_path}/{image_filename}.{image_type}").crop((left, top, right, bottom)).convert("RGB")
 
